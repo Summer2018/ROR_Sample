@@ -1,0 +1,177 @@
+<%= styled_error_messages_for 'user' %>
+<!--[form:user]-->
+
+<label for="user_disabled" class="req inline">Account Disabled?</label>
+<label for="user_disabled_yes" class="inline" style="margin-left: 10px;">Yes</label><%= radio_button("user", "disabled", "1", :class => "inline", :onclick => "Element.show('disabled-info');  setDisabledDate(true);") %>
+&nbsp;&nbsp;&nbsp;&nbsp;
+<label for="user_disabled_no" class="inline">No</label><%= radio_button("user", "disabled", "0", :class => "inline", :onclick => "Element.hide('disabled-info');  setDisabledDate(false);") %>
+<span id="disabled-info" style="<%= @user.disabled? ? "" : "display:none;" %>">&nbsp;&nbsp;&nbsp;&nbsp;
+Disabled date:<%= styled_text_field 'user', 'disabled_date', :style => "width: 87px;", :class => "inline" %>
+&nbsp;&nbsp;&nbsp;&nbsp;
+Reason disabled: <select id="user_reason_disabled" name="user[reason_disabled]">
+<%= options_for_select([ '', 'Duplicate account', 'Left company', 'New role in company', 'Non-renew', 'Opted out', 'Other' ], (@user.reason_archived or '')) %>
+</select><br /></span>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<label for="user_archived" class="req inline">Account Archived?</label>
+<label for="user_archived_yes" class="inline" style="margin-left: 10px;">Yes</label><%= radio_button("user", "archived", "1", :class => "inline", :onclick => "Element.show('archived-info');" ) %>
+&nbsp;&nbsp;&nbsp;&nbsp;
+<label for="user_archived_no" class="inline">No</label><%= radio_button("user", "archived", "0", :class => "inline", :onclick => "Element.hide('archived-info');") %>
+<span id="archived-info" style="<%= @user.archived? ? "" : "display:none;" %>">&nbsp;&nbsp;&nbsp;&nbsp;
+Reason archived: <select id="user_reason_archived" name="user[reason_archived]">
+<%= options_for_select([ '', 'Duplicate account', 'Left company', 'New role in company', 'Non-renew', 'Opted out', 'Other' ], (@user.reason_archived or '')) %>
+</select></span>
+<br />
+<label for="user_subscription_messages_ok" class="inline">Subscription e-mails OK</label>
+<label for="user_subscription_messages_ok_yes" class="inline" style="margin-left: 10px;">Yes</label><%= radio_button("user", "subscription_messages_ok", "1", :class => "inline") %>
+&nbsp;&nbsp;&nbsp;&nbsp;
+<label for="user_subscription_messages_ok_no" class="inline">No</label><%= radio_button("user", "subscription_messages_ok", "0", :class => "inline") %>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<label for="user_subscription_messages_ok" class="inline">Marketing e-mails OK</label>
+<label for="user_subscription_messages_ok_yes" class="inline" style="margin-left: 10px;">Yes</label><%= radio_button("user", "marketing_messages_ok", "1", :class => "inline") %>
+&nbsp;&nbsp;&nbsp;&nbsp;
+<label for="user_subscription_messages_ok_no" class="inline">No</label><%= radio_button("user", "marketing_messages_ok", "0", :class => "inline") %>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<label for="user_newsletter_ok" class="inline">Newsletter</label>
+<label for="user_newsletter_ok_yes" class="inline" style="margin-left: 10px;">Yes</label><%= radio_button("user", "newsletter", "true", :class => "inline") %>
+&nbsp;&nbsp;
+<label for="user_newsletter_ok_no" class="inline">No</label><%= radio_button("user", "newsletter", "false", :class => "inline") %><br/>
+<br />
+<div id="user-verified">
+	Last Verified 
+		<%= @user.last_verified.nil? ? "Never" : @user.last_verified %> by 
+		<%= @user.last_verified_by.nil? ? "UNKNOWN" : @user.last_verified_by.full_name %>
+		<%= link_to_remote "Verify", :url => {:action => "update_user_verified", :id => @user.id} %>
+</div>
+
+<div id="contact-info">
+<div id="basicinfo">
+	<div class="row"><label for="user_first_name" class="req inline-first">Name</label>
+		<%= hidden_field "user", "company_id" %>
+		<%= select("user", "salutation", User::SALUTATIONS, { :include_blank => true }, :style => "width: 50px;", :class => "inline" ) %>
+		<%= styled_text_field 'user', 'first_name', :size => 10, :class => "inline" %>
+		<%= styled_text_field 'user', 'last_name', :size => 12, :class => "inline" %>  <%= @user.new_record? ? "" : link_to("CRM", :controller => "/crm", :action => "show", :id => @user ) %>
+	</div>
+<div id="basics">
+	<div class="row"><label for="user_dear" class="inline-first">Preferred Name</label>
+		<%= styled_text_field 'user', 'dear', :size => 10, :class => "inline" %>
+	</div>
+	<div class="row"><label for="user_company" class="req inline-first">Company</label>
+		<%= styled_text_field 'user', 'company', :size => 25, :class => "inline", :onblur => "setCompanyComplete();" %><div class="auto_complete" id="company_auto_complete"></div><script type="text/javascript">
+		//<![CDATA[
+		var company_auto_completer = new Ajax.Autocompleter('user_company', 'company_auto_complete', '/admin/crm/auto_complete_for_company', {afterUpdateElement : setCompanyId})
+		//]]>
+		</script><span id="company-id-indicator"> <%= @user.linked_company.nil? ? "Not Linked" : "ID: #{@user.company_id}" %></span> <span id="linked-indicator"><%= contact_company_link @user %></span></div>
+		<div class="row" id="key-company-contact" style="<%= @user.linked_company.nil? ? "display:none;" : "" %>"><label for="user_company" class="inline-first">&nbsp;</label><%= check_box("user", "key_company_contact", {:class => "inline"}) %> Key Company Contact</div>
+		<div class="row"><label for="net_suite_company_name" class="req inline-first">NS Company</label>
+		<%= auto_complete_stylesheet + text_field_tag("net_suite_company_name","",{"style" => "width: 200px;", "class" => "inline", "value" => @user.net_suite_company_customer_id_and_name }) + content_tag("div", "", :id => "net_suite_company_name_auto_complete", :class => "auto_complete") + auto_complete_field("net_suite_company_name", { :url => { :action => "auto_complete_for_net_suite_company_name" } }) %></div>
+	<div class="row"><label for="contact_title" class="req inline-first">Title</label>
+	<%= styled_text_field 'user', 'title', :size => 25, :class => "inline"%></div>
+<div class="row"><label for="contact_department" class="inline-first">Department</label>
+<%= styled_text_field 'user', 'department', :size => 25, :class => "inline" %></div>
+	<div class="row"><label for="user_address_1" class="inline-first">Address Line 1</label>
+	<%= styled_text_field 'user_address', 'address_line_1', :size => 25, :class => "inline"%><br/>
+	<label for="user_address_2" class="inline-first">Address Line 2</label>
+	<%= styled_text_field 'user_address', 'address_line_2', :size => 25, :class => "inline" %></div>
+	<div class="row"><label for="user_address_city" class="inline-first">City</label>
+	<%= styled_text_field 'user_address', 'city', :size => 10, :class => "inline" %>
+	<br/><label for="user_address_state">State</label> <%= styled_text_field 'user_address', 'state', :size => 3, :class => "inline" %>
+	Postal Code <%= styled_text_field 'user_address', 'zip', :size => 7, :class => "inline" %></div>
+	<div class="row"><label for="user_address_country" class="inline-first">Country</label>
+	<%= styled_text_field 'user_address', 'country', :size => 25, :class => "normal" %></div><br/><br/>
+	<div class="row"><label for="contact_source_type" class="inline-first">Source Type</label> 
+		<%= select("user", "lead_source_type_id", LeadSourceType.find(:all).collect {|p| [ p.full_name, p.id ] }, { :include_blank => true }, :style => "width: 200px;", :class => "inline" ) %></div><br />
+	<div class="row"><label for="contact_source" class="inline-first">Source</label> 
+	<%= styled_text_field 'user', 'source', :style => "width: 200px;", :class => "inline"%></div><br/>
+	<div class="row"><label for="user_admin" class="inline-first">Sent Setup?</label>
+	&nbsp;&nbsp;&nbsp;&nbsp;Yes <%= radio_button("user", "sent_setup_message", "1", :class => "inline") %>
+	&nbsp;&nbsp;&nbsp;&nbsp;No <%= radio_button("user", "sent_setup_message", "0", :class => "inline") %>
+	<% if @user.sent_setup_message? %>
+		<p style="display: inline;">
+			&nbsp;&nbsp;Sent on <%= @user.setup_message_sent_date %><br/>
+			<% if @user.user_type == "User" && @user.enabled? %>
+			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onClick="if (confirm('This will send an email to the user with their password. Are you sure you want to send this?')) {var myAjax = new Ajax.Updater('password-status', '/admin/crm/send_user_password/<%= @user.id %>', {method:'get',asynchronous:true});}">Send password reminder</a><span id="password-status"></span><br>
+			<% end %>
+		</p>
+	<% else %>
+				&nbsp;&nbsp;<%= link_to("Send...", {:controller => "admin/users", :action => 'send_one_setup_message', :user_id => @user.id}, :popup => ['manage', 'height=300,width=1000,resizable=yes,scrollbars=yes'], :title => 'Send Client Setup Message') %>
+	<% end %></div>
+	</div>
+	<div id="contact-methods">
+		<div class="row"><label for="user_email" class="req inline-first">Email</label>
+		<%= styled_text_field 'user', 'email', :size => 20, :class => "inline" %> <%= image_tag "admin/email_error.png", :title => "Email bounces" %><%= styled_text_field 'user', 'email_bounce_counter', :style => "width: 15px;", :class => "inline" %></div>
+		<div class="row"><label for="user_password" class="req inline">	<a href="javascript:;" onClick="Element.toggle('passwd');">Password</a></label>
+		<span id="passwd" style="display:none;"><%= styled_text_field 'user', 'password', :style => "width: 100px;", :class => "inline" %></span></div>
+		<div class="row"><label for="user_phone" class="req inline-first">Phone</label>
+		<%= styled_text_field 'user', 'phone', :style => "width: 100px;", :class => "inline" %></div>
+		<% unless @user.new_record? %>
+			<div class="row" style="font-size: 9px; padding-left: 50px; padding-top: 10px;">
+				<div id="phone-contact-methods">
+				<%= render :partial => "crm/phone_contact_methods" %>
+				</div>
+			<%= render :partial => "crm/other_contact_info" %>
+			</div>
+		<% end %>
+		<div class="row"><label for="user_market_segment" class="inline-first">Market Segment</label> 
+		<%= select("user", "market_segment_id", MarketSegment.find(:all).collect {|p| [ p.name, p.id ] }, { :include_blank => true }, :style => "width: 200px;", :class => "inline" ) %></div> 
+		<div class="row"><label for="user_contact_level" class="inline-first">Level</label> 
+		<%= select("user", "contact_level_id", ContactLevel.find(:all).collect {|p| [ p.name, p.id ] }, { :include_blank => true }, :style => "width: 200px;", :class => "inline" ) %></div> 
+		<div class="row"><label for="user_contact_function" class="inline-first">Function</label> 
+		<%= select("user", "contact_function_id", ContactFunction.find(:all).collect {|p| [ p.name, p.id ] }, { :include_blank => true },  :style => "width: 200px;", :class => "inline" ) %></div>
+		<div class="row"><label for="user_ae">CSE</label>
+		<%= select("user", "assigned_ae_id", User.find_outsell_aes.collect{|x| [x.full_name, x.id]}, { :include_blank => 'UNKNOWN' }, :style => "width: 200px;", :class => "inline" ) %></div>
+		<div class="row"><label for="user_segment" class="">Dashboard</label>
+		<%= select("user", "segment_id", Segment.find(:all).collect {|p| [ p.name, p.id ] }, { :include_blank => true }, :style => "width: 200px;", :class => "inline" ) %></div>
+	</div>
+	<br clear="all" />
+	<br/><br/>
+	<br/><br clear="all" />
+<%= link_to_function "Other info (password message, employee, GoldMine IDs)", "Element.toggle('other-info')" %><br/><br/>
+<span id="other-info" style="display:none;">
+	<label for="user_employee" class="">Employee?</label>
+	<select id="user_employee" name="user[is_employee]" onchange="var y=document.getElementById('user_employee').value; if (y == 'Y') {Element.show('employee-info');} else {Element.hide('employee-info');}">
+	<%= options_for_select([ 'Y', 'N' ], (@user.is_employee or 'N')) %>
+	</select>
+	<label for="user_employee" class="">Former Employee?</label>
+	<select id="user_former_employee" name="user[former_employee]" onchange="var x=document.getElementById('user_former_employee').value; if (x == 'true') {Element.show('employee-info');} else {Element.hide('employee-info');}">
+	<%= options_for_select([[ "Yes", true ],[ "No", false ]], (@user.former_employee?)) %>
+	</select>
+	<span id="employee-info" style="<%= (@user.employee? || @user.former_employee?) ? "" : "display:none;" %>"><label for="user_segment" class="inline" style="margin-left: 10px;">Employee link</label>
+	<%= select("user", "employee_id", Employee.find(:all, :order => 'first_name, middle_name, last_name').collect {|e| [ e.full_name, e.id ] }, { :include_blank => true }) %><br/>
+	<br/>
+	<label for="user_admin" class="inline-first">CRM Access?</label>
+	<label for="user_crm_access_yes" class="inline" style="margin-left: 10px;">Yes</label><%= radio_button("user", "crm_access?", true, :class => "inline") %>
+	&nbsp;&nbsp;&nbsp;&nbsp;<label for="user_crm_access_no" class="inline">No</label><%= radio_button("user", "crm_access?", false, :class => "inline") %><br/>
+	<label for="user_admin" class="inline-first">QV Track Access?</label>
+	<label for="user_qv_track_access_yes" class="inline" style="margin-left: 10px;">Yes</label><%= radio_button("user", "qv_track_access?", true, :class => "inline") %>
+	&nbsp;&nbsp;&nbsp;&nbsp;<label for="user_qv_track_access_no" class="inline">No</label><%= radio_button("user", "qv_track_access?", false, :class => "inline") %><br/>
+	<label for="user_net_suite_access" class="inline-first">NetSuite Access?</label>
+	<label for="user_net_suite_access_yes" class="inline" style="margin-left: 10px;">Yes</label><%= radio_button("user", "net_suite_access?", true, :class => "inline") %>
+	&nbsp;&nbsp;&nbsp;&nbsp;<label for="user_net_suite_access_no" class="inline">No</label><%= radio_button("user", "net_suite_access?", false, :class => "inline") %><br/>
+	<label for="user_admin" class="inline-first">Admin Access?</label>
+	<label for="user_admin_yes" class="inline" style="margin-left: 10px;">Yes</label><%= radio_button("user", "is_admin", "1", :class => "inline") %>
+	&nbsp;&nbsp;&nbsp;&nbsp;<label for="user_admin_no" class="inline">No</label><%= radio_button("user", "is_admin", "0", :class => "inline") %>
+	<% if has_privilege?('edit', 'user_privileges') -%>
+			<p style="display: inline;">
+				&nbsp;&nbsp;<%= link_to("Admin Privs...", {:controller => "admin/admin", :action => 'edit_user_privileges', :user_id => @user.id}, :popup => ['manage', 'height=700,width=400,resizable=yes,scrollbars=yes'], :title => 'Manage admin privileges for this user') %>
+			</p>
+	<% end -%><br/>
+	<br/>
+	<label for="enewsletter_level" class="">Insights Level</label>
+	<select id="enewsletter_level" name="user[enewsletter_level]">
+	<%= options_for_select([ ['None',0], ['Admin',3], ['Editor',2], ['Author',1] ], @user.enewsletter_level) %>
+	</select>
+	<br/>
+	</span>
+	<br/>
+	<label for="user_net_suite_id" class="inline-first">NetSuite ID</label>
+	<%= styled_text_field 'user', 'net_suite_id', :style => "width: 50px;", :class => "inline" %>
+	<label for="user_employee" class="">Internal Notes</label>
+	<%= text_area 'user', 'internal_notes', "cols" => 20, "rows" => 5 %>
+	<br/>
+</span>
+<br/>
+<div style="margin-left: 500px;">
+	<input type="submit" class="btn" value="Save" />	
+Verified: <input class="cbox options" type="checkbox" id="verified" name="verified" /><br/>
+	</div>
+</div> 
+</div>
+<!--[eoform:user]-->
